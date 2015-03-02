@@ -12,6 +12,7 @@ import logging
 import ldap
 
 import settings
+from S3LDIF2UCSusers import S3LDIF2UCSusers
 
 __all__ = []
 __version__ = 0.1
@@ -34,7 +35,19 @@ logger = logging.getLogger()
 def main():  # IGNORE:C0111
     setup_logging()
 
-    logger.info("** STARTING **  (python-ldap version %s)", ldap.__version__)
+    logger.info("** STARTING **")
+    logger.debug("python-ldap version %s", ldap.__version__)
+    logger.debug("Configuration: %s", {"logfile": settings.logfile, "ldiffile": settings.ldiffile, "rootdn":
+        settings.rootdn, "groups": settings.groups(), "users": settings.users(), "computers": settings.computers()})
+
+    parser = S3LDIF2UCSusers(open(settings.ldiffile, "rb"))
+    parser.parse()
+
+    logger.info("Found %d groups, %d users and %d computers", len(parser.groups), len(parser.users),
+                len(parser.computers))
+    logger.debug("Found groups: %s", parser.groups)
+    logger.debug("Found users: %s", parser.users)
+    logger.debug("Found computers: %s", parser.computers)
 
     return 0
 
