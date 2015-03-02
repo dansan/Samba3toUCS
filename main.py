@@ -37,8 +37,9 @@ def main():  # IGNORE:C0111
 
     logger.info("** STARTING **")
     logger.debug("python-ldap version %s", ldap.__version__)
-    logger.debug("Configuration: %s", {"logfile": settings.logfile, "ldiffile": settings.ldiffile, "rootdn":
-        settings.rootdn, "groups": settings.groups(), "users": settings.users(), "computers": settings.computers()})
+    logger.debug("Configuration: %s", {"logfile": settings.logfile, "ldiffile": settings.ldiffile, "old_rootdn":
+        settings.old_rootdn, "old_groups": settings.old_groups, "old_users": settings.old_users, "old_computers":
+        settings.old_computers})
 
     parser = S3LDIF2UCSusers(open(settings.ldiffile, "rb"))
     parser.parse()
@@ -48,6 +49,10 @@ def main():  # IGNORE:C0111
     logger.debug("Found groups: %s", parser.groups)
     logger.debug("Found users: %s", parser.users)
     logger.debug("Found computers: %s", parser.computers)
+
+    parser.locate_target_containers()
+    logger.debug("Found target containers (user, group, computer): %s", [parser.user_container, parser.group_container,
+                                                                         parser.computer_container])
 
     return 0
 
