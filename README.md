@@ -9,6 +9,9 @@ This software is written specifically for the university of Kabuls migration of 
 
 Computer accounts are searched in both the settings.users path and in settings.computers.
 
+The DomainSID is not preserved - so all users will be new users (with the same username) and thus will get a fresh 
+profile the next time they login! Application settings may or may not be preserved - depends on the applications.
+
 Usage
 =====
 

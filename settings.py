@@ -7,6 +7,9 @@ old_rootdn = "dc=itck,dc=edu,dc=af"
 old_groups = "ou=Groups," + old_rootdn
 old_users = "ou=Users," + old_rootdn
 old_computers = "ou=Computers," + old_rootdn
+black_lists = {"users": ["Administrator", "nobody"],
+               "groups": [],
+               "computers": []}
 
 # overwrite default settings
 from local_settings import *

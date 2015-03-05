@@ -43,16 +43,19 @@ def main():  # IGNORE:C0111
 
     parser = S3LDIF2UCSusers(open(settings.ldiffile, "rb"))
     parser.parse()
+    parser.locate_target_containers()
 
     logger.info("Found %d groups, %d users and %d computers", len(parser.groups), len(parser.users),
                 len(parser.computers))
-    logger.debug("Found groups: %s", parser.groups)
-    logger.debug("Found users: %s", parser.users)
-    logger.debug("Found computers: %s", parser.computers)
+    logger.debug("Found groups:\n    %s", "\n    ".join(parser.groups))
+    logger.debug("Found users:\n    %s", "\n    ".join(parser.users))
+    logger.debug("Found computers:\n    %s", "\n    ".join(parser.computers))
+    logger.debug("Found target containers:\n    user: %s\n    group: %s\n    computer: %s", parser.user_container,
+                 parser.group_container, parser.computer_container)
 
-    parser.locate_target_containers()
-    logger.debug("Found target containers (user, group, computer): %s", [parser.user_container, parser.group_container,
-                                                                         parser.computer_container])
+    parser.create_groups()
+    parser.create_users()
+    parser.create_computers()
 
     return 0
 
