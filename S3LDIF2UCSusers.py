@@ -79,6 +79,25 @@ class S3LDIF2UCSusers(LDIFParser, object):
             elif df.startswith("computers: cn=computers"):
                 self.computer_container = df.split()[-1]
 
+    @staticmethod
+    def _user_exist(username):
+        """
+        Checks for existence of user with username.
+
+        :param username: str
+        :return: bool
+        """
+        try:
+            out = subprocess.check_output(["udm", "users/user", "list", "--filter", "username=" + username])
+        except subprocess.CalledProcessError, cpe:
+            logger.exception("Looking for existence of user '%s', error code: %d, output: '%s'", username,
+                             cpe.returncode, cpe.output)
+            return False
+        if len(out.split("\n")) > 2:
+            return True
+        else:
+            return False
+
     def create_groups(self):
         """
         Create not-existing groups except those in settings.black_lists["groups"], add users to (also pre-existing)
@@ -91,7 +110,7 @@ class S3LDIF2UCSusers(LDIFParser, object):
         existed = 0
         failed = 0
         blacklisted = 0
-        for counter, (dn, entry) in enumerate(self.groups.items(), 1):
+        for counter, (dn, entry) in enumerate(sorted(self.groups.items()), 1):
             cn = entry["cn"][0]
             if cn in settings.black_lists["groups_create"]:
                 logger.info("%04d/%04d omitting blacklisted group '%s'.", counter, len(self.users), dn)
@@ -111,7 +130,8 @@ class S3LDIF2UCSusers(LDIFParser, object):
             try:
                 out = subprocess.check_output(["udm", "groups/group", "create",
                                                "--position=" + self.group_container,
-                                               "--set", "name=" + cn])
+                                               "--set", "name=" + cn,
+                                               "--set", "description=added by S3LDIF2UCSusers"])
                 logger.debug("out: '%s'", out)
                 created += 1
             except subprocess.CalledProcessError, cpe:
@@ -126,7 +146,7 @@ class S3LDIF2UCSusers(LDIFParser, object):
         for dn, entry in self.groups.items():
             cn = entry["cn"][0]
             if cn in settings.black_lists["groups_add_users"]:
-                logger.info("Omitting user add for blacklisted group '%s'.", dn)
+                logger.info("Omitting user-add for blacklisted group '%s'.", dn)
                 continue
             if "memberUid" in entry and entry["memberUid"]:
                 logger.info("Group: '%s' has %d members.", cn, len(entry["memberUid"]))
@@ -134,10 +154,19 @@ class S3LDIF2UCSusers(LDIFParser, object):
 
                 space_uids = [muid for muid in entry["memberUid"] if " " in muid]
                 if space_uids:
-                    logger.info("Not adding %d users with space in username: %s", len(space_uids), space_uids)
+                    logger.info("Not adding %d users with space in username to group '%s': %s", len(space_uids), cn,
+                                space_uids)
 
+                non_existent_users = [muid for muid in entry["memberUid"] if not S3LDIF2UCSusers._user_exist(muid)]
+                if space_uids:
+                    logger.info("Not adding %d non existent users to group '%s': %s", len(non_existent_users), cn,
+                                non_existent_users)
+
+                users2add = [memberUid for memberUid in entry["memberUid"]
+                             if memberUid not in space_uids and memberUid not in non_existent_users]
+                logger.info("Adding the following users to group '%s': %s", cn, users2add)
                 members = " ".join(["--append users=uid=%s,%s" % (memberUid, self.group_container)
-                                    for memberUid in entry["memberUid"] if memberUid not in space_uids]).split()
+                                    for memberUid in users2add]).split()
                 cmd = ["udm", "groups/group", "modify", "--dn", "cn=%s,%s" % (cn, self.group_container)]
                 cmd.extend(members)
                 try:
@@ -150,7 +179,6 @@ class S3LDIF2UCSusers(LDIFParser, object):
                 logger.info("Group: '%s' has no members.", cn)
         logger.info("Done adding users to groups.")
 
-
     def create_users(self):
         """
         Create not-existing users except those in settings.black_lists["users"].
@@ -161,10 +189,11 @@ class S3LDIF2UCSusers(LDIFParser, object):
         existed = 0
         failed = 0
         blacklisted = 0
-        passwords_txt = open("passwords.txt", "wb")
+        passwords_txt = open("passwords.txt", "ab")
+        passwords_txt.write('"username", "password"\n')
 
         logger.info("Starting to add users.")
-        for counter, (dn, entry) in enumerate(self.users.items(), 1):
+        for counter, (dn, entry) in enumerate(sorted(self.users.items()), 1):
             if entry["uid"][0] in settings.black_lists["users"]:
                 logger.info("%04d/%04d omitting blacklisted user '%s'.", counter, len(self.users), dn)
                 blacklisted += 1
@@ -231,4 +260,8 @@ class S3LDIF2UCSusers(LDIFParser, object):
 
         :return: None
         """
-        pass
+        logger.info("The following computer accounts were found: %s", sorted([comp["uid"][0] for comp in
+                                                                              self.computers.values()]))
+        logger.info("Please join the clients manually, by logging in as Administrator and navigating")
+        logger.info("to: Control Panel -> System -> Computer Name -> Change")
+        return

@@ -47,14 +47,14 @@ def main():  # IGNORE:C0111
 
     logger.info("Found %d groups, %d users and %d computers", len(parser.groups), len(parser.users),
                 len(parser.computers))
-    logger.debug("Found groups:\n    %s", "\n    ".join(parser.groups))
-    logger.debug("Found users:\n    %s", "\n    ".join(parser.users))
-    logger.debug("Found computers:\n    %s", "\n    ".join(parser.computers))
+    logger.debug("Found groups:\n    %s", "\n    ".join(sorted(parser.groups)))
+    logger.debug("Found users:\n    %s", "\n    ".join(sorted(parser.users)))
+    logger.debug("Found computers:\n    %s", "\n    ".join(sorted(parser.computers)))
     logger.debug("Found target containers:\n    user: %s\n    group: %s\n    computer: %s", parser.user_container,
                  parser.group_container, parser.computer_container)
 
-    parser.create_groups()
     parser.create_users()
+    parser.create_groups()
     parser.create_computers()
 
     return 0

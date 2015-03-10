@@ -24,3 +24,19 @@ Dependencies
 ============
 
 - python-ldap
+
+Testing / Removal of added users and groups
+===========================================
+To remove users and groups added by this script, run in a terminal as root:
+
+```Shell
+for UnID in $(udm users/user list --filter "description=added by S3LDIF2UCSusers" \
+ | grep uidNumber | cut -f 2 -d ':' | cut -f 2 -d ' ');
+do udm users/user remove --filter uidNumber=$UnID;
+done
+
+for GrID in $(udm groups/group list --filter "description=added by S3LDIF2UCSusers" \
+ | grep gidNumber | cut -f 2 -d ':' | cut -f 2 -d ' ');
+do udm groups/group remove --filter gidNumber=$GrID;
+done
+```
