@@ -4,6 +4,7 @@ Samba3toUCS -- import users and groups from a Samba3 environment into UCS 3.2
 
 main is the start module.
 """
+from __builtin__ import enumerate
 
 import subprocess
 import logging
@@ -86,13 +87,11 @@ class S3LDIF2UCSusers(LDIFParser, object):
         :return: None
         """
         logger.info("Starting to add groups.")
-        counter = 0
         created = 0
         existed = 0
         failed = 0
         blacklisted = 0
-        for dn, entry in self.groups.items():
-            counter += 1
+        for counter, (dn, entry) in enumerate(self.groups.items(), 1):
             cn = entry["cn"][0]
             if cn in settings.black_lists["groups_create"]:
                 logger.info("%04d/%04d omitting blacklisted group '%s'.", counter, len(self.users), dn)
@@ -158,7 +157,6 @@ class S3LDIF2UCSusers(LDIFParser, object):
 
         :return: None
         """
-        counter = 0
         created = 0
         existed = 0
         failed = 0
@@ -166,8 +164,7 @@ class S3LDIF2UCSusers(LDIFParser, object):
         passwords_txt = open("passwords.txt", "wb")
 
         logger.info("Starting to add users.")
-        for dn, entry in self.users.items():
-            counter += 1
+        for counter, (dn, entry) in enumerate(self.users.items(), 1):
             if entry["uid"][0] in settings.black_lists["users"]:
                 logger.info("%04d/%04d omitting blacklisted user '%s'.", counter, len(self.users), dn)
                 blacklisted += 1
