@@ -1,6 +1,11 @@
 Samba3toUCS
 ===========
 
+**Deprecated - DO NOT USE!**
+Better create a CSV file somehow from your old data and use a newer import script: https://github.com/univention/udm_import
+
+---
+
 Import users and groups from a Samba3 environment into UCS 3.2.
 
 This software is written specifically for the university of Kabuls migration of a Samba3 system to a Univention
